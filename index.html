@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>郑尧 ♥ 黄梦婷 · 前世今生婚纱相册</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Noto+Serif+SC:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{background:#EFE3CF;font-family:'Noto Serif SC','Cormorant Garamond',serif;color:#3B342B;-webkit-font-smoothing:antialiased;overflow-x:hidden;}
+  :root{--gold:#C0A062;--ink:#3B342B;--cream:#FBF7F0;--sealred:#9E3A2C;}
+  ::selection{background:rgba(192,160,98,.3);}
+  img{user-select:none;-webkit-user-drag:none;}
+
+  @keyframes glowDrift{0%{transform:translate(0,0) scale(1);}100%{transform:translate(5%,-4%) scale(1.16);}}
+  @keyframes petalFall{0%{transform:translate3d(0,-12vh,0) rotate(0deg);}33%{transform:translate3d(var(--drift),28vh,0) rotate(70deg);}66%{transform:translate3d(calc(var(--drift)*-1),64vh,0) rotate(150deg);}100%{transform:translate3d(0,114vh,0) rotate(230deg);}}
+  @keyframes softPulse{0%,100%{opacity:.3;}50%{opacity:.85;}}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  @keyframes lbIn{from{opacity:0;}to{opacity:1;}}
+  @keyframes revealIn{from{opacity:0;transform:translateY(30px);filter:blur(7px);}to{opacity:1;transform:none;filter:none;}}
+  /* page-turn sheen + cast shadow, synced to the leaf rotation */
+  @keyframes leafSheenFront{0%{opacity:0;}50%{opacity:.92;}100%{opacity:.92;}}
+  @keyframes leafSheenBack{0%{opacity:.92;}50%{opacity:.92;}100%{opacity:0;}}
+  @keyframes castFade{0%{opacity:.7;}55%{opacity:.42;}100%{opacity:0;}}
+
+  [data-reveal]{opacity:0;}
+  [data-reveal].in{animation:revealIn 1.05s cubic-bezier(.2,.6,.35,1) both;}
+
+  /* ---------- shared photo card ---------- */
+  .page-card{background:var(--cream);padding:clamp(12px,2vw,20px);border:1px solid rgba(192,160,98,.45);box-shadow:0 34px 64px -34px rgba(78,54,20,.6);position:relative;}
+  .photo-inner{position:relative;aspect-ratio:3/4;overflow:hidden;border:1px solid rgba(192,160,98,.35);background:repeating-linear-gradient(45deg,#EFE4CF,#EFE4CF 11px,#E8DABF 11px,#E8DABF 22px);}
+  .photo-inner .ph-name{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:'Cormorant Garamond',monospace;font-size:13px;color:#A8884C;letter-spacing:1px;}
+  .photo-inner img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;}
+  .page-caption{text-align:center;margin-top:12px;font-family:'Cormorant Garamond',serif;letter-spacing:2px;font-size:12px;color:var(--gold);}
+
+  /* ---------- flip book ---------- */
+  .album-wrap{max-width:1060px;margin:0 auto;padding:0 20px;}
+  .book{position:relative;margin:0 auto;perspective:2400px;perspective-origin:50% 42%;touch-action:pan-y;max-width:880px;}
+  .book.single{max-width:440px;}
+  /* page-block thickness on each side */
+  .book::before,.book::after{content:"";position:absolute;top:14px;bottom:24px;width:9px;pointer-events:none;z-index:0;border-radius:2px;background:repeating-linear-gradient(90deg,#efe6d4 0 1px,#d9c8a4 1px 2px,#f3ecde 2px 3px);box-shadow:0 18px 30px -18px rgba(78,54,20,.5);}
+  .book::before{left:-9px;border-radius:3px 0 0 3px;}
+  .book::after{right:-9px;border-radius:0 3px 3px 0;}
+  .book.single::before,.book.single::after{display:none;}
+  .spread{position:relative;display:flex;justify-content:center;align-items:stretch;gap:0;z-index:1;}
+  .page{flex:1 1 0;max-width:430px;min-width:0;cursor:pointer;margin:0;position:relative;}
+  .book.single .page{max-width:440px;}
+  /* binding gutter shadow on inner edges */
+  .page.left::after,.page.right::after{content:"";position:absolute;top:0;bottom:0;width:34px;pointer-events:none;z-index:3;}
+  .page.left::after{right:0;background:linear-gradient(90deg,rgba(60,42,16,0),rgba(60,42,16,.16));}
+  .page.right::after{left:0;background:linear-gradient(270deg,rgba(60,42,16,0),rgba(60,42,16,.16));}
+  .book.single .page.left::after,.book.single .page.right::after{display:none;}
+  .gutter{width:2px;align-self:stretch;background:linear-gradient(rgba(192,160,98,0),rgba(120,90,40,.55),rgba(192,160,98,0));box-shadow:0 0 22px 6px rgba(120,90,40,.18);z-index:2;}
+  .book.single .gutter{display:none;}
+
+  /* the turning leaf */
+  .leaf{position:absolute;z-index:10;transform-style:preserve-3d;will-change:transform;}
+  .leaf-face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;overflow:hidden;}
+  .leaf-face.back{transform:rotateY(180deg);}
+  .leaf-face .page-card{height:100%;}
+  /* light/shade overlay that intensifies near the fold */
+  .leaf-shade{position:absolute;inset:0;pointer-events:none;opacity:0;}
+  .leaf-face.front .leaf-shade{background:linear-gradient(90deg,rgba(40,26,8,.40) 0%,rgba(40,26,8,0) 42%,rgba(255,250,240,.18) 100%);}
+  .leaf-face.back  .leaf-shade{background:linear-gradient(90deg,rgba(255,250,240,.18) 0%,rgba(40,26,8,0) 58%,rgba(40,26,8,.40) 100%);}
+  /* moving shadow cast onto the page underneath */
+  .flip-cast{position:absolute;top:0;bottom:0;z-index:5;pointer-events:none;opacity:0;}
+
+  @media (prefers-reduced-motion: reduce){
+    [data-reveal]{opacity:1!important;}
+    [data-reveal].in{animation:none!important;opacity:1!important;}
+    .petal,.glow,.disc,.hint{animation:none!important;}
+    .leaf,.leaf *{transition:none!important;}
+  }
+</style>
+</head>
+<body>
+
+<!-- ambient background -->
+<div aria-hidden="true" style="position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden;">
+  <div style="position:absolute;inset:0;background:linear-gradient(158deg,#F6EDDE 0%,#F1E7D6 48%,#ECE1CD 100%);"></div>
+  <div class="glow" style="position:absolute;top:-14%;left:-10%;width:62vw;height:62vw;border-radius:50%;background:radial-gradient(circle,rgba(214,191,144,.55),rgba(214,191,144,0) 68%);filter:blur(18px);animation:glowDrift 28s ease-in-out infinite alternate;"></div>
+  <div class="glow" style="position:absolute;bottom:-18%;right:-12%;width:70vw;height:70vw;border-radius:50%;background:radial-gradient(circle,rgba(205,178,128,.45),rgba(205,178,128,0) 70%);filter:blur(22px);animation:glowDrift 34s ease-in-out infinite alternate-reverse;animation-delay:-6s;"></div>
+  <div class="glow" style="position:absolute;top:34%;left:42%;width:42vw;height:42vw;border-radius:50%;background:radial-gradient(circle,rgba(232,214,176,.4),rgba(232,214,176,0) 72%);filter:blur(24px);animation:glowDrift 40s ease-in-out infinite alternate;animation-delay:-14s;"></div>
+  <div id="petalLayer"></div>
+</div>
+
+<div style="position:relative;z-index:1;">
+
+  <!-- cover -->
+  <section style="position:relative;height:100vh;min-height:600px;display:flex;align-items:center;justify-content:center;text-align:center;overflow:hidden;">
+    <img src="images/hanfu-1.jpg" alt="郑尧与黄梦婷" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;"/>
+    <div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(46,30,18,.5) 0%,rgba(46,30,18,.22) 38%,rgba(46,30,18,.66) 100%);"></div>
+    <div style="position:relative;color:#FBF3E4;padding:24px;">
+      <div data-reveal style="animation-delay:.1s;font-family:'Cormorant Garamond',serif;font-size:clamp(13px,2.4vw,16px);letter-spacing:6px;text-transform:uppercase;color:#E7CF9C;margin-bottom:26px;">壹 · 前世今生 · Wedding</div>
+      <h1 data-reveal style="animation-delay:.25s;margin:0;font-weight:400;font-size:clamp(38px,8.5vw,82px);letter-spacing:.06em;line-height:1.15;text-shadow:0 4px 30px rgba(30,18,8,.4);">郑尧&nbsp;<span style="color:#E2B45A;font-size:.78em;vertical-align:.06em;">♥</span>&nbsp;黄梦婷</h1>
+      <div data-reveal style="animation-delay:.45s;margin-top:30px;display:flex;align-items:center;justify-content:center;gap:18px;">
+        <span style="height:1px;width:48px;background:rgba(231,207,156,.7);"></span>
+        <span style="font-family:'Cormorant Garamond',serif;font-size:clamp(24px,5vw,40px);letter-spacing:.14em;color:#FBF3E4;">2026.10.04</span>
+        <span style="height:1px;width:48px;background:rgba(231,207,156,.7);"></span>
+      </div>
+      <div data-reveal style="animation-delay:.6s;margin-top:8px;font-family:'Cormorant Garamond',serif;font-size:clamp(15px,3vw,20px);letter-spacing:.4em;color:#E7CF9C;">11:58</div>
+      <div data-reveal style="animation-delay:.9s;margin-top:60px;display:flex;flex-direction:column;align-items:center;gap:10px;">
+        <span style="font-size:12px;letter-spacing:4px;color:#E7CF9C;">向下滑动</span>
+        <span class="hint" style="width:1px;height:36px;background:linear-gradient(rgba(231,207,156,.85),transparent);animation:softPulse 3s ease-in-out infinite;"></span>
+      </div>
+    </div>
+  </section>
+
+  <!-- countdown -->
+  <section data-reveal style="text-align:center;padding:clamp(70px,12vw,118px) 24px 64px;">
+    <div style="font-family:'Cormorant Garamond',serif;font-size:14px;letter-spacing:5px;text-transform:uppercase;color:var(--gold);margin-bottom:18px;">Our Moment</div>
+    <div data-cd="label" style="font-size:clamp(22px,4.4vw,32px);font-weight:400;letter-spacing:.12em;color:var(--ink);">距婚礼还有</div>
+    <div style="display:flex;justify-content:center;align-items:stretch;gap:clamp(8px,3vw,28px);margin-top:34px;flex-wrap:wrap;">
+      <div style="min-width:70px;">
+        <div data-cd="days" style="font-family:'Cormorant Garamond',serif;font-size:clamp(40px,9vw,68px);line-height:1;color:var(--gold);font-weight:500;">—</div>
+        <div style="margin-top:10px;font-size:13px;letter-spacing:3px;color:var(--ink);opacity:.7;">天</div>
+      </div>
+      <div style="font-family:'Cormorant Garamond',serif;font-size:clamp(34px,7vw,56px);color:rgba(192,160,98,.4);align-self:flex-start;line-height:1.15;">:</div>
+      <div style="min-width:70px;">
+        <div data-cd="hh" style="font-family:'Cormorant Garamond',serif;font-size:clamp(40px,9vw,68px);line-height:1;color:var(--gold);font-weight:500;">—</div>
+        <div style="margin-top:10px;font-size:13px;letter-spacing:3px;color:var(--ink);opacity:.7;">时</div>
+      </div>
+      <div style="font-family:'Cormorant Garamond',serif;font-size:clamp(34px,7vw,56px);color:rgba(192,160,98,.4);align-self:flex-start;line-height:1.15;">:</div>
+      <div style="min-width:70px;">
+        <div data-cd="mm" style="font-family:'Cormorant Garamond',serif;font-size:clamp(40px,9vw,68px);line-height:1;color:var(--gold);font-weight:500;">—</div>
+        <div style="margin-top:10px;font-size:13px;letter-spacing:3px;color:var(--ink);opacity:.7;">分</div>
+      </div>
+      <div style="font-family:'Cormorant Garamond',serif;font-size:clamp(34px,7vw,56px);color:rgba(192,160,98,.4);align-self:flex-start;line-height:1.15;">:</div>
+      <div style="min-width:70px;">
+        <div data-cd="ss" style="font-family:'Cormorant Garamond',serif;font-size:clamp(40px,9vw,68px);line-height:1;color:var(--gold);font-weight:500;">—</div>
+        <div style="margin-top:10px;font-size:13px;letter-spacing:3px;color:var(--ink);opacity:.7;">秒</div>
+      </div>
+    </div>
+    <div style="margin-top:30px;font-size:14px;letter-spacing:3px;color:var(--ink);opacity:.55;">2026 年 10 月 4 日 · 11:58</div>
+  </section>
+
+  <!-- 前世今生 -->
+  <section style="padding:clamp(28px,4.5vw,52px) 0 16px;">
+    <div data-reveal style="text-align:center;max-width:640px;margin:0 auto;padding:0 24px;">
+      <div style="font-family:'Cormorant Garamond',serif;font-size:14px;letter-spacing:5px;text-transform:uppercase;color:var(--gold);margin-bottom:16px;">The Story</div>
+      <h2 style="margin:0;font-weight:400;font-size:clamp(30px,6vw,50px);letter-spacing:.14em;color:var(--ink);">前世 · 今生</h2>
+      <p style="margin:22px auto 0;max-width:480px;font-size:clamp(14px,2.4vw,16px);line-height:2;color:var(--ink);opacity:.7;letter-spacing:.04em;">一袭明制汉服，是前世的相逢；<br/>一身洁白婚纱，是今生的相守。<br/>跨越千年时光，我们再次重逢。</p>
+    </div>
+    <div style="height:30px;"></div>
+    <div id="pairs"></div>
+  </section>
+
+  <!-- flip album -->
+  <section data-reveal style="padding:clamp(40px,7vw,70px) 0 clamp(60px,9vw,90px);">
+    <div style="text-align:center;max-width:640px;margin:0 auto 44px;padding:0 24px;">
+      <div style="font-family:'Cormorant Garamond',serif;font-size:14px;letter-spacing:5px;text-transform:uppercase;color:var(--gold);margin-bottom:16px;">The Album</div>
+      <h2 style="margin:0;font-weight:400;font-size:clamp(30px,6vw,50px);letter-spacing:.14em;color:var(--ink);">翻页相册</h2>
+      <p style="margin:20px auto 0;font-size:clamp(14px,2.4vw,16px);line-height:2;color:var(--ink);opacity:.7;">轻轻翻动书页，重温每一帧温柔时光。</p>
+    </div>
+    <div class="album-wrap">
+      <div class="book" id="book">
+        <div class="spread" id="spread"></div>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:center;gap:26px;margin-top:34px;">
+        <button id="albumPrev" aria-label="上一页" style="width:48px;height:48px;border-radius:50%;border:1px solid var(--gold);background:rgba(251,247,240,.7);color:var(--gold);font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .3s ease;">‹</button>
+        <span id="albumLabel" style="font-family:'Cormorant Garamond',serif;letter-spacing:2px;font-size:16px;color:var(--ink);min-width:96px;text-align:center;">1 / 14</span>
+        <button id="albumNext" aria-label="下一页" style="width:48px;height:48px;border-radius:50%;border:1px solid var(--gold);background:rgba(251,247,240,.7);color:var(--gold);font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .3s ease;">›</button>
+      </div>
+      <div style="text-align:center;margin-top:14px;font-size:12px;letter-spacing:2px;color:var(--ink);opacity:.45;">点击照片查看高清大图 · 手机可左右滑动翻页</div>
+    </div>
+  </section>
+
+  <!-- id photo -->
+  <section data-reveal style="padding:clamp(40px,7vw,70px) 0 clamp(60px,9vw,90px);">
+    <div style="max-width:520px;margin:0 auto;text-align:center;padding:0 24px;">
+      <div style="font-family:'Cormorant Garamond',serif;font-size:14px;letter-spacing:5px;text-transform:uppercase;color:var(--gold);margin-bottom:16px;">For The Record</div>
+      <h2 style="margin:0 0 8px;font-weight:400;font-size:clamp(28px,5.5vw,44px);letter-spacing:.14em;color:var(--ink);">证件照</h2>
+      <p style="margin:14px auto 34px;font-size:14px;line-height:1.9;color:var(--ink);opacity:.65;">写进结婚证里的我们。</p>
+      <figure id="idphoto" style="margin:0 auto;cursor:pointer;background:var(--cream);padding:14px;border:1px solid rgba(192,160,98,.45);box-shadow:0 30px 60px -32px rgba(78,54,20,.55);max-width:420px;">
+        <div style="position:relative;aspect-ratio:3/2;overflow:hidden;background:repeating-linear-gradient(45deg,#EFE4CF,#EFE4CF 11px,#E8DABF 11px,#E8DABF 22px);">
+          <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:'Cormorant Garamond',monospace;font-size:13px;color:#A8884C;">idphoto</div>
+          <img src="pic/idphoto.png" alt="证件照" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;"/>
+        </div>
+      </figure>
+      <a href="images/idphoto.jpg" download="郑尧黄梦婷-证件照.jpg" style="display:inline-flex;align-items:center;gap:9px;margin-top:28px;padding:13px 30px;border:1px solid var(--gold);border-radius:40px;color:var(--gold);text-decoration:none;font-size:14px;letter-spacing:2px;background:rgba(251,247,240,.5);transition:all .3s ease;">↓ 下载原图</a>
+    </div>
+  </section>
+
+  <footer data-reveal style="text-align:center;padding:clamp(70px,11vw,120px) 24px clamp(90px,14vw,140px);">
+    <div style="color:var(--gold);font-size:20px;letter-spacing:6px;margin-bottom:24px;">❦</div>
+    <div style="font-size:clamp(24px,5vw,38px);font-weight:300;letter-spacing:.18em;color:var(--ink);">郑尧 · 黄梦婷</div>
+    <div style="margin-top:18px;font-family:'Cormorant Garamond',serif;font-size:clamp(16px,3vw,22px);letter-spacing:.2em;color:var(--gold);">2026.10.04 · 11:58</div>
+    <div style="margin-top:30px;font-size:clamp(14px,2.6vw,17px);letter-spacing:.3em;color:var(--ink);opacity:.62;">执子之手 · 与子偕老</div>
+  </footer>
+
+</div>
+
+<!-- music player -->
+<div style="position:fixed;right:16px;bottom:16px;z-index:60;display:flex;align-items:center;gap:9px;background:rgba(251,247,240,.88);backdrop-filter:blur(10px);border:1px solid rgba(192,160,98,.5);border-radius:40px;padding:7px 15px 7px 9px;box-shadow:0 14px 34px -14px rgba(78,54,20,.55);max-width:80vw;">
+  <div class="disc" id="disc" style="width:26px;height:26px;border-radius:50%;flex-shrink:0;background:radial-gradient(circle at 50% 50%, #3B342B 17%, #C0A062 18%, #C0A062 23%, #3B342B 24%, #C0A062 29%, #EFE3CC 30%);animation:spin 4.5s linear infinite;animation-play-state:paused;"></div>
+  <button id="mPrev" aria-label="上一首" style="background:none;border:none;color:var(--ink);font-size:15px;cursor:pointer;padding:2px 3px;opacity:.7;">⟨</button>
+  <button id="mToggle" aria-label="播放/暂停" style="width:34px;height:34px;border-radius:50%;border:1px solid var(--gold);background:var(--gold);color:#fff;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">▶</button>
+  <button id="mNext" aria-label="下一首" style="background:none;border:none;color:var(--ink);font-size:15px;cursor:pointer;padding:2px 3px;opacity:.7;">⟩</button>
+  <div style="display:flex;flex-direction:column;line-height:1.25;min-width:0;">
+    <span style="font-family:'Cormorant Garamond',serif;font-size:9px;letter-spacing:2px;color:var(--gold);">NOW PLAYING</span>
+    <span id="mTitle" style="font-size:13px;color:var(--ink);max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">暂无音乐</span>
+  </div>
+  <audio id="audio" preload="none"></audio>
+</div>
+
+<!-- lightbox -->
+<div id="lightbox" style="position:fixed;inset:0;z-index:80;background:rgba(26,18,10,.93);backdrop-filter:blur(5px);display:none;align-items:center;justify-content:center;animation:lbIn .3s ease;">
+  <button id="lbClose" aria-label="关闭" style="position:absolute;top:20px;right:22px;width:46px;height:46px;border-radius:50%;border:1px solid rgba(231,207,156,.5);background:rgba(0,0,0,.2);color:#E7CF9C;font-size:20px;cursor:pointer;z-index:3;">✕</button>
+  <button id="lbPrev" aria-label="上一张" style="position:absolute;left:14px;top:50%;transform:translateY(-50%);width:50px;height:50px;border-radius:50%;border:1px solid rgba(231,207,156,.45);background:rgba(0,0,0,.2);color:#E7CF9C;font-size:24px;cursor:pointer;z-index:3;">‹</button>
+  <button id="lbNext" aria-label="下一张" style="position:absolute;right:14px;top:50%;transform:translateY(-50%);width:50px;height:50px;border-radius:50%;border:1px solid rgba(231,207,156,.45);background:rgba(0,0,0,.2);color:#E7CF9C;font-size:24px;cursor:pointer;z-index:3;">›</button>
+  <div id="lbStage" style="position:relative;max-width:92vw;max-height:82vh;display:flex;align-items:center;justify-content:center;">
+    <img id="lbPreview" src="" alt="" aria-hidden="true" style="max-width:92vw;max-height:82vh;display:block;filter:blur(16px);transform:scale(1.03);border-radius:2px;"/>
+    <img id="lbFull" src="" alt="高清大图" style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain;border-radius:2px;opacity:0;transition:opacity .5s ease;"/>
+  </div>
+  <div id="lbCounter" style="position:absolute;bottom:26px;left:0;right:0;text-align:center;color:#E7CF9C;font-family:'Cormorant Garamond',serif;letter-spacing:3px;font-size:15px;pointer-events:none;"></div>
+</div>
+
+<script src="musics/playlist.js"></script>
+<script>
+(function(){
+  "use strict";
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function P(n){ return { name:n, thumb:'pic/'+n+'.png', preview:'preview/'+n+'.jpg', full:'images/'+n+'.jpg' }; }
+
+  /* broken images -> reveal the parchment placeholder */
+  document.addEventListener('error', function(e){
+    if (e.target && e.target.tagName === 'IMG') e.target.style.opacity = 0;
+  }, true);
+
+  /* ---------------- background petals ---------------- */
+  (function(){
+    var L = document.getElementById('petalLayer');
+    var defs = [
+      [7,9,36,23,-3,.5],[18,6,-28,29,-11,.4],[30,11,44,19,-7,.52],[41,7,-34,27,-15,.38],
+      [52,9,30,24,-2,.46],[63,6,-40,31,-9,.4],[72,10,38,21,-13,.5],[82,7,-30,26,-5,.42],
+      [90,9,34,22,-17,.48],[48,5,-24,33,-21,.36],[12,8,40,25,-19,.44],[77,6,-36,30,-25,.4]
+    ];
+    var html = '';
+    for (var i=0;i<defs.length;i++){
+      var d = defs[i], sz=d[1];
+      html += '<span class="petal" style="position:absolute;top:-12vh;left:'+d[0]+'%;width:'+sz+'px;height:'+sz+'px;'+
+        'border-radius:60% 40% 55% 45%;background:radial-gradient(circle at 35% 30%,rgba(238,221,178,.95),rgba(198,162,98,.2));'+
+        'box-shadow:0 0 '+(sz)+'px 2px rgba(214,191,144,.32);opacity:'+d[5]+';--drift:'+d[2]+'px;'+
+        'animation:petalFall '+d[3]+'s linear infinite;animation-delay:'+d[4]+'s;"></span>';
+    }
+    L.innerHTML = html;
+  })();
+
+  /* ---------------- reveal on scroll ---------------- */
+  function applyReveal(){
+    var els = document.querySelectorAll('[data-reveal]');
+    if (reduce){ els.forEach(function(el){ el.classList.add('in'); }); return; }
+    var vh = window.innerHeight || document.documentElement.clientHeight;
+    els.forEach(function(el){
+      if (el.classList.contains('in')) return;
+      var r = el.getBoundingClientRect();
+      if (!r.height) return;
+      if (r.top < vh*0.92 && r.bottom > vh*0.06) el.classList.add('in');
+    });
+  }
+  var rafR = false;
+  function onScroll(){ if (rafR) return; rafR = true; requestAnimationFrame(function(){ rafR=false; applyReveal(); }); }
+  window.addEventListener('scroll', onScroll, { passive:true });
+  window.addEventListener('resize', onScroll);
+  applyReveal();
+  setTimeout(applyReveal, 250);
+  setTimeout(applyReveal, 900);
+
+  /* ---------------- countdown ---------------- */
+  (function(){
+    var target = new Date(2026,9,4,11,58,0).getTime();
+    var cd = {
+      label: document.querySelector('[data-cd="label"]'),
+      days: document.querySelector('[data-cd="days"]'),
+      hh: document.querySelector('[data-cd="hh"]'),
+      mm: document.querySelector('[data-cd="mm"]'),
+      ss: document.querySelector('[data-cd="ss"]')
+    };
+    function pad(n){ return String(n).padStart(2,'0'); }
+    function tick(){
+      var diff = target - Date.now();
+      var before = diff > 0;
+      var d = Math.abs(diff);
+      cd.label.textContent = before ? '距婚礼还有' : '我们已携手';
+      cd.days.textContent = String(Math.floor(d/86400000));
+      cd.hh.textContent = pad(Math.floor(d/3600000)%24);
+      cd.mm.textContent = pad(Math.floor(d/60000)%60);
+      cd.ss.textContent = pad(Math.floor(d/1000)%60);
+    }
+    tick();
+    setInterval(tick, 1000);
+  })();
+
+  /* ---------------- lightbox ---------------- */
+  var lb = {
+    el: document.getElementById('lightbox'),
+    preview: document.getElementById('lbPreview'),
+    full: document.getElementById('lbFull'),
+    counter: document.getElementById('lbCounter'),
+    list: [], index: 0
+  };
+  function lbShow(){
+    var cur = lb.list[lb.index]; if (!cur) return;
+    lb.full.style.opacity = 0;
+    lb.preview.src = cur.preview;
+    lb.full.src = cur.full;
+    lb.counter.textContent = (lb.index+1) + ' / ' + lb.list.length;
+  }
+  lb.full.addEventListener('load', function(){ lb.full.style.opacity = 1; });
+  function openLightbox(list, i){
+    lb.list = list; lb.index = i;
+    lb.el.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+    lbShow();
+  }
+  function closeLightbox(){ lb.el.style.display = 'none'; document.body.style.overflow = ''; }
+  function lbNav(dir){
+    var n = lb.list.length; if (!n) return;
+    lb.index = (lb.index + dir + n) % n; lbShow();
+  }
+  document.getElementById('lbClose').addEventListener('click', function(e){ e.stopPropagation(); closeLightbox(); });
+  document.getElementById('lbPrev').addEventListener('click', function(e){ e.stopPropagation(); lbNav(-1); });
+  document.getElementById('lbNext').addEventListener('click', function(e){ e.stopPropagation(); lbNav(1); });
+  document.getElementById('lbStage').addEventListener('click', function(e){ e.stopPropagation(); });
+  lb.el.addEventListener('click', closeLightbox);
+  window.addEventListener('keydown', function(e){
+    if (lb.el.style.display !== 'flex') return;
+    if (e.key === 'Escape') closeLightbox();
+    else if (e.key === 'ArrowLeft') lbNav(-1);
+    else if (e.key === 'ArrowRight') lbNav(1);
+  });
+
+  /* ---------------- 前世今生 pairs ---------------- */
+  (function(){
+    var verticalSet = { 2:true, 5:true };
+    var pairList = [];
+    var pairs = [1,2,3,4,5,6].map(function(i){
+      var past = P('hanfu-'+i), present = P('wedding-'+i);
+      pairList.push(past, present);
+      var vertical = !!verticalSet[i];
+      return { idx:String(i).padStart(2,'0'), past:past, present:present, vertical:vertical, maxw: vertical ? '720px' : '680px' };
+    });
+    var giOf = function(p){ return pairList.indexOf(p); };
+
+    function tagHTML(text, kind){
+      var color = kind==='past' ? 'var(--sealred)' : '#A8884C';
+      var border = kind==='past' ? 'rgba(158,58,44,.4)' : 'rgba(192,160,98,.55)';
+      return '<span style="position:absolute;top:13px;left:13px;z-index:2;background:rgba(251,247,240,.93);color:'+color+';border:1px solid '+border+';font-size:13px;letter-spacing:4px;padding:5px 12px;border-radius:2px;">'+text+'</span>';
+    }
+    function figHTML(photo, kind, alt, ratio){
+      return '<figure data-gi="'+giOf(photo)+'" style="margin:0;cursor:pointer;flex:1;position:relative;aspect-ratio:'+ratio+';overflow:hidden;border-radius:3px;'+
+        'background:repeating-linear-gradient(45deg,#EFE4CF,#EFE4CF 11px,#E8DABF 11px,#E8DABF 22px);box-shadow:0 22px 46px -26px rgba(78,54,20,.6);border:1px solid rgba(192,160,98,.4);">'+
+        '<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:\'Cormorant Garamond\',monospace;font-size:13px;letter-spacing:1px;color:#A8884C;">'+photo.name+'</div>'+
+        '<img src="'+photo.thumb+'" alt="'+alt+'" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;transition:transform 1s cubic-bezier(.2,.6,.35,1);"/>'+
+        tagHTML(kind==='past'?'前世':'今生', kind)+'</figure>';
+    }
+
+    var host = document.getElementById('pairs');
+    var out = '';
+    pairs.forEach(function(pair){
+      var inner;
+      if (pair.vertical){
+        inner = '<div style="display:flex;gap:clamp(9px,2.2vw,16px);align-items:stretch;justify-content:center;">'+
+          figHTML(pair.past,'past','前世','3/4') + figHTML(pair.present,'present','今生','3/4') + '</div>';
+      } else {
+        inner = figHTML(pair.past,'past','前世','3/2') +
+          '<div style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:10px 0;">'+
+            '<span style="width:1px;height:15px;background:linear-gradient(var(--gold),transparent);"></span>'+
+            '<span style="color:var(--gold);font-size:14px;">❀</span>'+
+            '<span style="width:1px;height:15px;background:linear-gradient(transparent,var(--gold));"></span>'+
+          '</div>' + figHTML(pair.present,'present','今生','3/2');
+      }
+      out += '<div data-reveal style="max-width:'+pair.maxw+';margin:0 auto;padding:0 22px;">'+
+        '<div style="display:flex;align-items:center;justify-content:center;gap:14px;margin-bottom:16px;">'+
+          '<span style="height:1px;width:40px;background:linear-gradient(90deg,transparent,var(--gold));"></span>'+
+          '<span style="font-family:\'Cormorant Garamond\',serif;font-size:14px;letter-spacing:4px;color:var(--gold);white-space:nowrap;">CHAPTER '+pair.idx+'</span>'+
+          '<span style="height:1px;width:40px;background:linear-gradient(90deg,var(--gold),transparent);"></span>'+
+        '</div>' + inner + '</div>' +
+        '<div style="height:clamp(38px,5vw,60px);"></div>';
+    });
+    host.innerHTML = out;
+
+    host.addEventListener('click', function(e){
+      var fig = e.target.closest('figure[data-gi]'); if (!fig) return;
+      openLightbox(pairList, parseInt(fig.getAttribute('data-gi'),10));
+    });
+    // gentle hover zoom (desktop)
+    host.addEventListener('mouseover', function(e){ var f=e.target.closest('figure[data-gi]'); if(f){ var im=f.querySelector('img'); if(im) im.style.transform='scale(1.05)'; } });
+    host.addEventListener('mouseout', function(e){ var f=e.target.closest('figure[data-gi]'); if(f){ var im=f.querySelector('img'); if(im) im.style.transform=''; } });
+  })();
+
+  /* ---------------- flip album (realistic book) ---------------- */
+  (function(){
+    var albumNames = ['hanfu-7','hanfu-8','wedding-7','wedding-8','wedding-9','wedding-10','wedding-11','wedding-12','outdoor-1','outdoor-2','outdoor-3','outdoor-4','outdoor-5','outdoor-6'];
+    var album = albumNames.map(P);
+    var N = album.length;
+    var book = document.getElementById('book');
+    var spread = document.getElementById('spread');
+    var label = document.getElementById('albumLabel');
+
+    var perPage = window.innerWidth >= 900 ? 2 : 1;
+    var start = 0;
+    var flipping = false;
+    var FLIP_MS = 900;
+
+    function cardHTML(photo){
+      return '<div class="page-card">'+
+        '<div class="photo-inner">'+
+          '<div class="ph-name">'+photo.name+'</div>'+
+          '<img src="'+photo.thumb+'" alt="'+photo.name+'" loading="lazy"/>'+
+        '</div>'+
+        '<div class="page-caption">'+photo.name+'</div></div>';
+    }
+    function pageEl(photo, side){
+      var d = document.createElement('figure');
+      d.className = 'page ' + side;
+      d.setAttribute('data-idx', String(album.indexOf(photo)));
+      d.innerHTML = cardHTML(photo);
+      return d;
+    }
+
+    function renderSpread(){
+      book.classList.toggle('single', perPage === 1);
+      spread.innerHTML = '';
+      var left = album[start] || album[0];
+      spread.appendChild(pageEl(left, 'left'));
+      if (perPage === 2){
+        var g = document.createElement('div'); g.className = 'gutter'; spread.appendChild(g);
+        var right = album[start+1] || left;
+        spread.appendChild(pageEl(right, 'right'));
+      }
+      updateLabel();
+    }
+    function updateLabel(){
+      if (perPage === 2){
+        var last = Math.min(start+2, N);
+        label.textContent = (start+1) + ' – ' + last + ' / ' + N;
+      } else {
+        label.textContent = (start+1) + ' / ' + N;
+      }
+    }
+
+    function maxStart(){ return perPage === 2 ? (N - 2) : (N - 1); }
+
+    // build the turning leaf with both faces showing real photos
+    function makeLeaf(rect, frontPhoto, backPhoto, originLeft){
+      var leaf = document.createElement('div');
+      leaf.className = 'leaf';
+      leaf.style.left = rect.left + 'px';
+      leaf.style.top = rect.top + 'px';
+      leaf.style.width = rect.width + 'px';
+      leaf.style.height = rect.height + 'px';
+      leaf.style.transformOrigin = originLeft ? 'left center' : 'right center';
+      leaf.style.transform = 'rotateY(0deg)';
+      var front = document.createElement('div');
+      front.className = 'leaf-face front';
+      front.innerHTML = cardHTML(frontPhoto) + '<div class="leaf-shade"></div>';
+      var back = document.createElement('div');
+      back.className = 'leaf-face back';
+      back.innerHTML = cardHTML(backPhoto) + '<div class="leaf-shade"></div>';
+      leaf.appendChild(front);
+      leaf.appendChild(back);
+      return leaf;
+    }
+    // soft shadow cast onto the page below, sweeping away from the spine
+    function makeCast(rect, originLeft){
+      var c = document.createElement('div');
+      c.className = 'flip-cast';
+      c.style.left = rect.left + 'px';
+      c.style.width = rect.width + 'px';
+      c.style.background = originLeft
+        ? 'linear-gradient(90deg,rgba(40,26,8,.30),rgba(40,26,8,0) 70%)'
+        : 'linear-gradient(270deg,rgba(40,26,8,.30),rgba(40,26,8,0) 70%)';
+      return c;
+    }
+
+    function relRect(el){
+      var b = book.getBoundingClientRect();
+      var r = el.getBoundingClientRect();
+      return { left: r.left - b.left, top: r.top - b.top, width: r.width, height: r.height };
+    }
+
+    function flip(dir){
+      if (flipping) return;
+      var pp = perPage;
+      var next = start + dir * pp;
+      if (next < 0 || next > maxStart()) return;
+      var forward = dir > 0;
+
+      // reduced motion -> gentle crossfade
+      if (reduce){
+        spread.style.transition = 'opacity .18s ease';
+        spread.style.opacity = '0';
+        setTimeout(function(){
+          start = next; renderSpread();
+          spread.style.opacity = '1';
+        }, 180);
+        return;
+      }
+
+      flipping = true;
+      book.style.pointerEvents = 'none';
+
+      var pages = spread.querySelectorAll('.page');
+      var leftEl = pages[0];
+      var rightEl = pp === 2 ? pages[1] : null;
+
+      var coveredEl, frontPhoto, backPhoto, originLeft, revealEl, revealPhoto;
+
+      if (pp === 2){
+        if (forward){
+          coveredEl = rightEl;                 // right page lifts
+          originLeft = true;                   // hinge at spine (its left edge)
+          frontPhoto = album[start+1];         // current right
+          backPhoto  = album[start+2] || frontPhoto; // becomes new left
+          revealEl = rightEl;                  // under the lifting page
+          revealPhoto = album[start+3] || album[start+2] || frontPhoto; // new right
+        } else {
+          coveredEl = leftEl;                  // left page lifts
+          originLeft = false;                  // hinge at spine (its right edge)
+          frontPhoto = album[start];           // current left
+          backPhoto  = album[start-1];         // becomes new right
+          revealEl = leftEl;
+          revealPhoto = album[start-2] || album[start-1] || frontPhoto; // new left
+        }
+      } else {
+        coveredEl = leftEl;
+        if (forward){ originLeft = true; frontPhoto = album[start]; backPhoto = album[start+1]; revealPhoto = album[start+1]; }
+        else        { originLeft = false; frontPhoto = album[start]; backPhoto = album[start-1]; revealPhoto = album[start-1]; }
+        revealEl = leftEl;
+      }
+
+      var rect = relRect(coveredEl);
+      var leaf = makeLeaf(rect, frontPhoto, backPhoto, originLeft);
+      var cast = makeCast(rect, originLeft);
+      book.appendChild(cast);
+      book.appendChild(leaf);
+
+      // reveal destination underneath the leaf (still hidden by the flat leaf)
+      revealEl.innerHTML = cardHTML(revealPhoto);
+
+      var frontShade = leaf.querySelector('.leaf-face.front .leaf-shade');
+      var backShade  = leaf.querySelector('.leaf-face.back .leaf-shade');
+
+      requestAnimationFrame(function(){ requestAnimationFrame(function(){
+        var deg = forward ? -178 : 178;
+        var ease = 'cubic-bezier(.55,.06,.30,1)';
+        leaf.style.transition = 'transform '+FLIP_MS+'ms '+ease;
+        leaf.style.transform = 'rotateY('+deg+'deg)';
+        // sheen darkens toward the vertical fold, then eases off as it lays flat
+        frontShade.style.animation = 'leafSheenFront '+FLIP_MS+'ms '+ease+' forwards';
+        backShade.style.animation  = 'leafSheenBack '+FLIP_MS+'ms '+ease+' forwards';
+        // soft shadow the lifting page casts on the sheet below, receding outward
+        cast.style.animation = 'castFade '+FLIP_MS+'ms ease-out forwards';
+      }); });
+
+      var done = function(){
+        start = next;
+        renderSpread();
+        if (leaf.parentNode) leaf.parentNode.removeChild(leaf);
+        if (cast.parentNode) cast.parentNode.removeChild(cast);
+        flipping = false;
+        book.style.pointerEvents = '';
+      };
+      var fired = false;
+      leaf.addEventListener('transitionend', function(ev){
+        if (ev.propertyName === 'transform' && !fired){ fired = true; done(); }
+      });
+      setTimeout(function(){ if (!fired){ fired = true; done(); } }, FLIP_MS + 120);
+    }
+
+    // controls
+    document.getElementById('albumPrev').addEventListener('click', function(){ flip(-1); });
+    document.getElementById('albumNext').addEventListener('click', function(){ flip(1); });
+
+    // click photo -> lightbox
+    spread.addEventListener('click', function(e){
+      var pg = e.target.closest('.page'); if (!pg || flipping) return;
+      var idx = parseInt(pg.getAttribute('data-idx'),10);
+      if (!isNaN(idx)) openLightbox(album, idx);
+    });
+
+    // swipe on touch
+    var x0 = null, y0 = null;
+    book.addEventListener('touchstart', function(e){ x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; }, { passive:true });
+    book.addEventListener('touchend', function(e){
+      if (x0 == null) return;
+      var dx = e.changedTouches[0].clientX - x0;
+      var dy = e.changedTouches[0].clientY - y0;
+      if (Math.abs(dx) > 45 && Math.abs(dx) > Math.abs(dy)) flip(dx < 0 ? 1 : -1);
+      x0 = y0 = null;
+    }, { passive:true });
+
+    // responsive: switch single / double spread
+    window.addEventListener('resize', function(){
+      var pp = window.innerWidth >= 900 ? 2 : 1;
+      if (pp !== perPage){
+        perPage = pp;
+        if (pp === 2) start = start - (start % 2);
+        renderSpread();
+      }
+    });
+
+    renderSpread();
+  })();
+
+  /* idphoto lightbox */
+  (function(){
+    var idphoto = P('idphoto');
+    document.getElementById('idphoto').addEventListener('click', function(){ openLightbox([idphoto], 0); });
+  })();
+
+  /* ---------------- music player ---------------- */
+  (function(){
+    var audio = document.getElementById('audio');
+    var disc = document.getElementById('disc');
+    var titleEl = document.getElementById('mTitle');
+    var toggleBtn = document.getElementById('mToggle');
+    var tracks = [], idx = 0, playing = false;
+
+    function setTrack(i){
+      idx = i;
+      var t = tracks[idx];
+      if (!t) return;
+      audio.src = t.src;
+      titleEl.textContent = t.title;
+    }
+    function reflect(){
+      toggleBtn.textContent = playing ? '❚❚' : '▶';
+      disc.style.animationPlayState = playing ? 'running' : 'paused';
+    }
+    function toggle(){
+      if (!tracks.length) return;
+      if (playing){ audio.pause(); playing = false; reflect(); }
+      else { audio.play().then(function(){ playing = true; reflect(); }).catch(function(){ playing = false; reflect(); }); }
+    }
+    function nav(dir){
+      if (!tracks.length) return;
+      setTrack((idx + dir + tracks.length) % tracks.length);
+      if (playing) audio.play().catch(function(){});
+    }
+    toggleBtn.addEventListener('click', toggle);
+    document.getElementById('mPrev').addEventListener('click', function(){ nav(-1); });
+    document.getElementById('mNext').addEventListener('click', function(){ nav(1); });
+    audio.addEventListener('ended', function(){ nav(1); });
+
+    function useTracks(t){
+      if (Array.isArray(t) && t.length){ tracks = t; setTrack(0); }
+    }
+    if (window.WEDDING_PLAYLIST){ useTracks(window.WEDDING_PLAYLIST); }
+    else {
+      fetch('musics/playlist.json').then(function(r){ return r.ok ? r.json() : []; })
+        .then(useTracks).catch(function(){});
+    }
+  })();
+
+})();
+</script>
+</body>
+</html>
