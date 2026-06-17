@@ -7,9 +7,12 @@
   },
   "assets": {
     "directory": ".",
-    "exclude": [
-      ".git/**",
-      "node_modules/**"
+    "targets": [
+      "index.html",
+      "images/**",
+      "musics/**",
+"pic/**",
+"preview/**"
     ]
   },
   "compatibility_flags": [
