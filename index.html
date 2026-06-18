@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>郑尧 ♥ 黄梦婷 · 前世今生婚纱相册</title>
+<title>郑尧 ♥ 黄梦婷 · 相册</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Noto+Serif+SC:wght@200;300;400;500;600&family=Ma+Shan+Zheng&display=swap" rel="stylesheet">
@@ -21,9 +21,12 @@
   @keyframes spin{to{transform:rotate(360deg);}}
   @keyframes lbIn{from{opacity:0;}to{opacity:1;}}
   @keyframes revealIn{from{opacity:0;transform:translateY(30px);filter:blur(7px);}to{opacity:1;transform:none;filter:none;}}
-  @keyframes readerIn{from{transform:scale(.92);opacity:0;}to{transform:scale(1);opacity:1;}}
-  @keyframes readerOut{from{transform:scale(1);opacity:1;}to{transform:scale(.94);opacity:0;}}
   @keyframes floatY{0%,100%{transform:translateY(0);}50%{transform:translateY(-8px);}}
+  /* open/close: book cover lifts open + spread unfolds from the spine — NO opacity fade */
+  @keyframes coverOpenSwing{0%{transform:rotateY(0deg);}100%{transform:rotateY(-106deg);}}
+  @keyframes coverCloseSwing{0%{transform:rotateY(-106deg);}100%{transform:rotateY(0deg);}}
+  @keyframes readerUnfold{0%{clip-path:inset(0 50% 0 50%);transform:scale(.88);}100%{clip-path:inset(0 0 0 0);transform:scale(1);}}
+  @keyframes readerFold{0%{clip-path:inset(0 0 0 0);transform:scale(1);}100%{clip-path:inset(0 50% 0 50%);transform:scale(.88);}}
   /* page-turn sheen + cast shadow, synced to the leaf rotation */
   @keyframes leafSheenFront{0%{opacity:0;}50%{opacity:.6;}100%{opacity:.6;}}
   @keyframes leafSheenBack{0%{opacity:.6;}50%{opacity:.6;}100%{opacity:0;}}
@@ -32,15 +35,18 @@
   [data-reveal]{opacity:0;}
   [data-reveal].in{animation:revealIn 1.05s cubic-bezier(.2,.6,.35,1) both;}
 
-  /* ---------- closed album cover ---------- */
-  .closed-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;}
-  .cover-holder{perspective:1600px;}
-  .album-cover{position:relative;width:clamp(262px,42vw,360px);transform-origin:left center;transform-style:preserve-3d;cursor:pointer;transition:transform .98s cubic-bezier(.5,0,.28,1),opacity .5s ease .52s;}
+  /* ---------- album stack: closed cover + reader share one cell (overlap during the open/close) ---------- */
+  .album-stack{display:grid;justify-items:center;align-items:start;width:100%;}
+  .album-stack>.closed-screen,.album-stack>.reader{grid-area:1/1;}
+  .closed-screen{display:flex;flex-direction:column;align-items:center;justify-content:flex-start;position:relative;z-index:3;}
+  .cover-holder{perspective:1500px;perspective-origin:50% 46%;}
+  .cover-dolly{transform-style:preserve-3d;animation:floatY 6s ease-in-out infinite;}
+  .album-cover{position:relative;width:clamp(262px,42vw,360px);aspect-ratio:3/4;transform-origin:left center;transform-style:preserve-3d;cursor:pointer;}
   .cover-face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;}
   .cover-back{transform:rotateY(180deg);}
 
   /* ---------- flip reader ---------- */
-  .reader{display:none;width:100%;max-width:1000px;}
+  .reader{display:none;width:100%;max-width:1000px;position:relative;z-index:1;}
   .book-stage{position:relative;margin:0 auto;touch-action:pan-y;}
   .book-frame{position:relative;border-radius:5px;background:linear-gradient(145deg,#d3b478,#a4854a);box-shadow:0 56px 100px -44px rgba(60,40,12,.72);}
   .book-inner{position:relative;display:flex;align-items:flex-start;background:#efe2c6;perspective:2000px;}
@@ -51,12 +57,16 @@
   .leaf-shade{position:absolute;inset:0;pointer-events:none;opacity:0;z-index:30;}
   .flip-cast{position:absolute;top:0;bottom:0;z-index:11;pointer-events:none;opacity:0;}
 
-  /* phase visibility */
-  [data-phase="open"] .reader,[data-phase="closing"] .reader{display:block;}
-  [data-phase="open"] .reader{animation:readerIn 1s cubic-bezier(.2,.6,.35,1) both;}
-  [data-phase="closing"] .reader{animation:readerOut .5s ease forwards;}
-  [data-phase="open"] .closed-screen,[data-phase="closing"] .closed-screen{display:none;}
-  [data-phase="opening"] .album-cover{transform:rotateY(-148deg);opacity:.1;}
+  /* phase visibility + open/close choreography (continuous, NO fade) */
+  [data-phase="opening"] .reader,[data-phase="open"] .reader,[data-phase="closing"] .reader{display:block;}
+  [data-phase="opening"] .reader{animation:readerUnfold 1.5s cubic-bezier(.33,0,.18,1) both;}
+  [data-phase="closing"] .reader{animation:readerFold 1.2s cubic-bezier(.5,0,.3,1) both;}
+  [data-phase="open"] .closed-screen{display:none;}
+  [data-phase="opening"] .album-cover{animation:coverOpenSwing 1.4s cubic-bezier(.42,.02,.16,1) both;}
+  [data-phase="closing"] .album-cover{animation:coverCloseSwing 1.15s cubic-bezier(.45,.02,.3,1) both;}
+  [data-phase="opening"] .cover-dolly,[data-phase="closing"] .cover-dolly{animation:none;}
+  [data-phase="opening"] #openBtn,[data-phase="open"] #openBtn,[data-phase="closing"] #openBtn{visibility:hidden;pointer-events:none;}
+  [data-phase="opening"] .cd-below,[data-phase="closing"] .cd-below{visibility:hidden;}
 
   .navbtn{width:48px;height:48px;border-radius:50%;border:1px solid var(--gold);background:rgba(251,247,240,.7);color:var(--gold);font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .3s ease;}
   .navbtn:hover{background:var(--gold);color:#fff;}
@@ -66,8 +76,8 @@
   @media (prefers-reduced-motion: reduce){
     [data-reveal]{opacity:1!important;}
     [data-reveal].in{animation:none!important;opacity:1!important;}
-    .petal,.glow,.disc,.hint,.coverFloat{animation:none!important;}
-    .album-cover,.leaf,.leaf *,.reader{transition:none!important;animation:none!important;}
+    .petal,.glow,.disc,.hint,.cover-dolly{animation:none!important;}
+    .album-cover,.leaf,.leaf *,.reader,.cover-dolly{transition:none!important;animation:none!important;}
   }
 </style>
 </head>
@@ -84,26 +94,14 @@
 
 <div id="phaseRoot" data-phase="closed" style="position:relative;z-index:1;min-height:100vh;">
 
-  <!-- album section (closed cover / reader) -->
-  <section style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:clamp(40px,7vw,80px) 16px clamp(30px,5vw,50px);">
+  <!-- album section (closed cover / reader) — anchored at the top of the page -->
+  <section style="display:flex;flex-direction:column;align-items:center;padding:clamp(24px,4vh,54px) 16px clamp(20px,3.5vw,40px);">
 
+    <div class="album-stack">
     <!-- CLOSED COVER -->
     <div class="closed-screen">
-      <!-- small wedding countdown, just above the album cover -->
-      <div style="text-align:center;margin-bottom:clamp(22px,4vw,38px);">
-        <div data-cd="label" style="font-size:clamp(13px,2.6vw,16px);letter-spacing:.18em;color:var(--ink);opacity:.85;">距婚礼还有</div>
-        <div style="display:flex;justify-content:center;align-items:flex-start;gap:clamp(5px,2vw,14px);margin-top:10px;">
-          <div style="min-width:40px;"><div data-cd="days" style="font-family:'Cormorant Garamond',serif;font-size:clamp(22px,4.6vw,32px);line-height:1;color:var(--gold);font-weight:500;">—</div><div style="margin-top:5px;font-size:11px;letter-spacing:2px;color:var(--ink);opacity:.6;">天</div></div>
-          <div style="font-family:'Cormorant Garamond',serif;font-size:clamp(18px,3.6vw,26px);color:rgba(192,160,98,.4);">:</div>
-          <div style="min-width:40px;"><div data-cd="hh" style="font-family:'Cormorant Garamond',serif;font-size:clamp(22px,4.6vw,32px);line-height:1;color:var(--gold);font-weight:500;">—</div><div style="margin-top:5px;font-size:11px;letter-spacing:2px;color:var(--ink);opacity:.6;">时</div></div>
-          <div style="font-family:'Cormorant Garamond',serif;font-size:clamp(18px,3.6vw,26px);color:rgba(192,160,98,.4);">:</div>
-          <div style="min-width:40px;"><div data-cd="mm" style="font-family:'Cormorant Garamond',serif;font-size:clamp(22px,4.6vw,32px);line-height:1;color:var(--gold);font-weight:500;">—</div><div style="margin-top:5px;font-size:11px;letter-spacing:2px;color:var(--ink);opacity:.6;">分</div></div>
-          <div style="font-family:'Cormorant Garamond',serif;font-size:clamp(18px,3.6vw,26px);color:rgba(192,160,98,.4);">:</div>
-          <div style="min-width:40px;"><div data-cd="ss" style="font-family:'Cormorant Garamond',serif;font-size:clamp(22px,4.6vw,32px);line-height:1;color:var(--gold);font-weight:500;">—</div><div style="margin-top:5px;font-size:11px;letter-spacing:2px;color:var(--ink);opacity:.6;">秒</div></div>
-        </div>
-      </div>
       <div class="cover-holder">
-        <div class="coverFloat" style="animation:floatY 6s ease-in-out infinite;">
+        <div class="cover-dolly">
           <div class="album-cover" id="albumCover">
             <!-- front -->
             <div class="cover-face cover-front" style="aspect-ratio:3/4;border-radius:5px 9px 9px 5px;background:linear-gradient(135deg,#FBF4E6 0%,#F3E7CE 55%,#EAD9B6 100%);box-shadow:0 50px 90px -38px rgba(78,54,20,.7),inset 0 0 0 1px rgba(255,255,255,.4);overflow:hidden;">
@@ -154,15 +152,29 @@
       </div>
       <div style="text-align:center;margin-top:10px;font-size:12px;letter-spacing:2px;color:var(--ink);opacity:.45;">点击照片查看高清大图 · 手机可左右滑动翻页</div>
     </div>
+    </div><!-- /album-stack -->
+
+    <!-- wedding countdown — below the album -->
+    <div class="cd-below" style="text-align:center;margin-top:clamp(34px,5.5vw,62px);">
+      <div data-cd="label" style="font-size:clamp(13px,2.6vw,16px);letter-spacing:.18em;color:var(--ink);opacity:.85;">距婚礼还有</div>
+      <div style="display:flex;justify-content:center;align-items:flex-start;gap:clamp(5px,2vw,14px);margin-top:10px;">
+        <div style="min-width:40px;"><div data-cd="days" style="font-family:'Cormorant Garamond',serif;font-size:clamp(22px,4.6vw,32px);line-height:1;color:var(--gold);font-weight:500;">—</div><div style="margin-top:5px;font-size:11px;letter-spacing:2px;color:var(--ink);opacity:.6;">天</div></div>
+        <div style="font-family:'Cormorant Garamond',serif;font-size:clamp(18px,3.6vw,26px);color:rgba(192,160,98,.4);">:</div>
+        <div style="min-width:40px;"><div data-cd="hh" style="font-family:'Cormorant Garamond',serif;font-size:clamp(22px,4.6vw,32px);line-height:1;color:var(--gold);font-weight:500;">—</div><div style="margin-top:5px;font-size:11px;letter-spacing:2px;color:var(--ink);opacity:.6;">时</div></div>
+        <div style="font-family:'Cormorant Garamond',serif;font-size:clamp(18px,3.6vw,26px);color:rgba(192,160,98,.4);">:</div>
+        <div style="min-width:40px;"><div data-cd="mm" style="font-family:'Cormorant Garamond',serif;font-size:clamp(22px,4.6vw,32px);line-height:1;color:var(--gold);font-weight:500;">—</div><div style="margin-top:5px;font-size:11px;letter-spacing:2px;color:var(--ink);opacity:.6;">分</div></div>
+        <div style="font-family:'Cormorant Garamond',serif;font-size:clamp(18px,3.6vw,26px);color:rgba(192,160,98,.4);">:</div>
+        <div style="min-width:40px;"><div data-cd="ss" style="font-family:'Cormorant Garamond',serif;font-size:clamp(22px,4.6vw,32px);line-height:1;color:var(--gold);font-weight:500;">—</div><div style="margin-top:5px;font-size:11px;letter-spacing:2px;color:var(--ink);opacity:.6;">秒</div></div>
+      </div>
+    </div>
 
   </section>
 
   <!-- id photo -->
-  <section data-reveal style="padding:clamp(40px,7vw,70px) 0 clamp(60px,9vw,90px);">
+  <section data-reveal style="padding:clamp(40px,7vw,70px) 0 clamp(16px,2.5vw,26px);">
     <div style="max-width:520px;margin:0 auto;text-align:center;padding:0 24px;">
-      <div style="font-family:'Cormorant Garamond',serif;font-size:14px;letter-spacing:5px;text-transform:uppercase;color:var(--gold);margin-bottom:16px;">For The Record</div>
-      <h2 style="margin:0 0 8px;font-weight:400;font-size:clamp(28px,5.5vw,44px);letter-spacing:.14em;color:var(--ink);">证件照</h2>
-      <p style="margin:14px auto 34px;font-size:14px;line-height:1.9;color:var(--ink);opacity:.65;letter-spacing:.06em;">从此，同一个户口本。</p>
+      <div style="font-family:'Cormorant Garamond',serif;font-size:14px;letter-spacing:5px;text-transform:uppercase;color:var(--gold);margin-bottom:18px;">For The Record</div>
+      <p style="margin:0 auto 32px;font-size:14px;line-height:1.9;color:var(--ink);opacity:.65;letter-spacing:.06em;">从此，同一个户口本。</p>
       <figure id="idphoto" style="margin:0 auto;cursor:pointer;background:var(--cream);padding:14px;border:1px solid rgba(192,160,98,.45);box-shadow:0 30px 60px -32px rgba(78,54,20,.55);max-width:420px;">
         <div style="position:relative;aspect-ratio:3/2;overflow:hidden;background:repeating-linear-gradient(45deg,#EFE4CF,#EFE4CF 11px,#E8DABF 11px,#E8DABF 22px);">
           <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:'Cormorant Garamond',monospace;font-size:13px;color:#A8884C;">idphoto</div>
@@ -173,7 +185,7 @@
     </div>
   </section>
 
-  <footer data-reveal style="text-align:center;padding:clamp(60px,10vw,110px) 24px clamp(80px,13vw,130px);">
+  <footer data-reveal style="text-align:center;padding:clamp(22px,3.5vw,40px) 24px clamp(80px,13vw,130px);">
     <div style="color:var(--gold);font-size:20px;letter-spacing:6px;margin-bottom:22px;">❦</div>
     <div style="font-family:'Ma Shan Zheng',serif;font-size:clamp(28px,6vw,44px);color:var(--ink);">郑尧 · 黄梦婷</div>
     <div style="margin-top:16px;font-family:'Cormorant Garamond',serif;font-size:clamp(16px,3vw,22px);letter-spacing:.2em;color:var(--gold);">2026.10.04 · 11:58</div>
@@ -567,24 +579,22 @@
   }
 
   /* ---------------- open / close ---------------- */
+  var animT1=null;
   function openBook(){
-    if(phase!=='open' && phase!=='closing'){
-      Music.startOnOpen();
-    }
     if(phase!=='closed') return;
-    if(reduce){ renderReader(); setPhase('open'); return; }
-    renderReader();
-    setPhase('opening');
-    setTimeout(function(){ setPhase('open'); }, 940);
+    Music.startOnOpen();
+    renderReader();                 // spread is solid underneath — revealed by motion, never faded in
+    if(reduce){ setPhase('open'); return; }
+    setPhase('opening');            // cover lifts open + spread unfolds from the spine
+    clearTimeout(animT1);
+    animT1=setTimeout(function(){ setPhase('open'); }, 1500);
   }
   function closeBook(){
     if(phase!=='open') return;
-    if(reduce){ setPhase('closed'); start=0; return; }
-    setPhase('closing');
-    setTimeout(function(){
-      setPhase('closed');
-      start=0; perPage=window.innerWidth>=820?2:1;
-    }, 520);
+    if(reduce){ setPhase('closed'); start=0; perPage=window.innerWidth>=820?2:1; return; }
+    setPhase('closing');            // spread folds back to the spine + cover lowers shut
+    clearTimeout(animT1);
+    animT1=setTimeout(function(){ setPhase('closed'); start=0; perPage=window.innerWidth>=820?2:1; }, 1200);
   }
 
   document.getElementById('openBtn').addEventListener('click',openBook);
