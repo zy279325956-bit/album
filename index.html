@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>郑尧 ♥ 黄梦婷 · 相册</title>
+<title>郑尧 ♥ 黄梦婷 · 前世今生婚纱相册</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Noto+Serif+SC:wght@200;300;400;500;600&family=Ma+Shan+Zheng&display=swap" rel="stylesheet">
@@ -57,13 +57,30 @@
   .leaf-shade{position:absolute;inset:0;pointer-events:none;opacity:0;z-index:30;}
   .flip-cast{position:absolute;top:0;bottom:0;z-index:11;pointer-events:none;opacity:0;}
 
-  /* phase visibility + open/close choreography (continuous, NO fade) */
-  [data-phase="opening"] .reader,[data-phase="open"] .reader,[data-phase="closing"] .reader{display:block;}
-  [data-phase="opening"] .reader{animation:readerUnfold 1.5s cubic-bezier(.33,0,.18,1) both;}
-  [data-phase="closing"] .reader{animation:readerFold 1.2s cubic-bezier(.5,0,.3,1) both;}
-  [data-phase="open"] .closed-screen{display:none;}
-  [data-phase="opening"] .album-cover{animation:coverOpenSwing 1.4s cubic-bezier(.42,.02,.16,1) both;}
-  [data-phase="closing"] .album-cover{animation:coverCloseSwing 1.15s cubic-bezier(.45,.02,.3,1) both;}
+  /* ---------- music player (collapsible ball) ---------- */
+  #player{position:fixed;right:16px;bottom:16px;z-index:60;display:flex;align-items:center;}
+  .player-panel{display:flex;align-items:center;gap:5px;overflow:hidden;max-width:0;opacity:0;padding:0;margin-right:0;background:rgba(251,247,240,.93);backdrop-filter:blur(10px);border:1px solid rgba(192,160,98,.5);border-radius:26px;box-shadow:0 12px 30px -14px rgba(78,54,20,.55);white-space:nowrap;transition:max-width .45s cubic-bezier(.4,0,.2,1),opacity .3s ease,padding .4s ease,margin-right .4s ease;}
+  #player.expanded .player-panel{max-width:260px;opacity:1;padding:6px 14px;margin-right:9px;}
+  #playerBall{width:54px;height:54px;border-radius:50%;border:1px solid rgba(192,160,98,.6);background:rgba(251,247,240,.95);box-shadow:0 12px 30px -10px rgba(78,54,20,.55);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;padding:0;}
+
+  /* ---------- open/close: 3D book overlay (same-size open, then zoom) ---------- */
+  .ob-stage{grid-area:1/1;justify-self:center;align-self:start;display:none;perspective:2200px;perspective-origin:50% 42%;pointer-events:none;z-index:4;}
+  .ob-stage.show{display:block;}
+  .ob-shift,.ob-scale,.ob-book,.ob-cover{will-change:transform;}
+  .ob-scale{transform-origin:50% 0;}
+  .ob-book{position:relative;transform-style:preserve-3d;margin:0 auto;}
+  .ob-pg{position:absolute;top:0;bottom:0;width:50%;overflow:hidden;}
+  .ob-pg.full{width:100%;}
+  .ob-left{left:0;}
+  .ob-right{left:50%;}
+  .ob-spine{position:absolute;top:0;bottom:0;left:50%;width:26px;transform:translateX(-50%);z-index:6;pointer-events:none;background:linear-gradient(90deg,rgba(40,26,8,0),rgba(40,26,8,.26) 50%,rgba(40,26,8,0));}
+  .ob-cover{position:absolute;top:0;bottom:0;transform-style:preserve-3d;z-index:9;}
+  .ob-cover-face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;overflow:hidden;}
+  .ob-cover-back{transform:rotateY(180deg);}
+
+  /* phase visibility — the overlay drives the open/close; NO fades */
+  [data-phase="open"] .reader{display:block;}
+  [data-phase="opening"] .closed-screen,[data-phase="open"] .closed-screen,[data-phase="closing"] .closed-screen{display:none;}
   [data-phase="opening"] .cover-dolly,[data-phase="closing"] .cover-dolly{animation:none;}
   [data-phase="opening"] #openBtn,[data-phase="open"] #openBtn,[data-phase="closing"] #openBtn{visibility:hidden;pointer-events:none;}
   [data-phase="opening"] .cd-below,[data-phase="closing"] .cd-below{visibility:hidden;}
@@ -152,6 +169,9 @@
       </div>
       <div style="text-align:center;margin-top:10px;font-size:12px;letter-spacing:2px;color:var(--ink);opacity:.45;">点击照片查看高清大图 · 手机可左右滑动翻页</div>
     </div>
+
+    <!-- 3D book overlay (drives the open / close animation) -->
+    <div class="ob-stage" id="obStage" aria-hidden="true"></div>
     </div><!-- /album-stack -->
 
     <!-- wedding countdown — below the album -->
@@ -194,16 +214,20 @@
 
 </div>
 
-<!-- music player -->
-<div style="position:fixed;right:16px;bottom:16px;z-index:60;display:flex;align-items:center;gap:9px;background:rgba(251,247,240,.88);backdrop-filter:blur(10px);border:1px solid rgba(192,160,98,.5);border-radius:40px;padding:7px 15px 7px 9px;box-shadow:0 14px 34px -14px rgba(78,54,20,.55);max-width:80vw;">
-  <div class="disc" id="disc" style="width:26px;height:26px;border-radius:50%;flex-shrink:0;background:radial-gradient(circle at 50% 50%, #3B342B 17%, #C0A062 18%, #C0A062 23%, #3B342B 24%, #C0A062 29%, #EFE3CC 30%);animation:spin 4.5s linear infinite;animation-play-state:paused;"></div>
-  <button id="mPrev" aria-label="上一首" style="background:none;border:none;color:var(--ink);font-size:15px;cursor:pointer;padding:2px 3px;opacity:.7;">⟨</button>
-  <button id="mToggle" aria-label="播放/暂停" style="width:34px;height:34px;border-radius:50%;border:1px solid var(--gold);background:var(--gold);color:#fff;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">▶</button>
-  <button id="mNext" aria-label="下一首" style="background:none;border:none;color:var(--ink);font-size:15px;cursor:pointer;padding:2px 3px;opacity:.7;">⟩</button>
-  <div style="display:flex;flex-direction:column;line-height:1.25;min-width:0;">
-    <span style="font-family:'Cormorant Garamond',serif;font-size:9px;letter-spacing:2px;color:var(--gold);">NOW PLAYING</span>
-    <span id="mTitle" style="font-size:13px;color:var(--ink);max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">暂无音乐</span>
+<!-- music player (collapsible ball) -->
+<div id="player">
+  <div class="player-panel">
+    <button id="mPrev" aria-label="上一首" style="background:none;border:none;color:var(--ink);font-size:15px;cursor:pointer;padding:2px 4px;opacity:.7;">⟨</button>
+    <button id="mToggle" aria-label="播放/暂停" style="width:32px;height:32px;border-radius:50%;border:1px solid var(--gold);background:var(--gold);color:#fff;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">▶</button>
+    <button id="mNext" aria-label="下一首" style="background:none;border:none;color:var(--ink);font-size:15px;cursor:pointer;padding:2px 4px;opacity:.7;">⟩</button>
+    <div style="display:flex;flex-direction:column;line-height:1.2;min-width:0;">
+      <span style="font-family:'Cormorant Garamond',serif;font-size:8px;letter-spacing:2px;color:var(--gold);">NOW PLAYING</span>
+      <span id="mTitle" style="font-size:12px;color:var(--ink);max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">暂无音乐</span>
+    </div>
   </div>
+  <button id="playerBall" aria-label="音乐播放器" title="音乐">
+    <div class="disc" id="disc" style="width:30px;height:30px;border-radius:50%;background:radial-gradient(circle at 50% 50%, #3B342B 16%, #C0A062 17%, #C0A062 22%, #3B342B 23%, #C0A062 28%, #EFE3CC 29%);animation:spin 4.5s linear infinite;animation-play-state:paused;"></div>
+  </button>
   <audio id="audio" preload="none"></audio>
 </div>
 
@@ -578,23 +602,132 @@
     setTimeout(function(){ if(!fired){ fired=true; done(); } }, FLIP_MS+140);
   }
 
-  /* ---------------- open / close ---------------- */
-  var animT1=null;
+  /* ---------------- open / close: 3D book overlay (same-size open → zoom up, NO fade) ---------------- */
+  var reader=document.getElementById('reader');
+  var obStage=document.getElementById('obStage');
+  var animTs=[];
+  function clearAnims(){ animTs.forEach(clearTimeout); animTs=[]; }
+  function later(fn,ms){ var t=setTimeout(fn,ms); animTs.push(t); return t; }
+  var SWING=1250, ZOOM=950;   // slow, gentle book-open then zoom
+  var lastCoverW=0;           // cached cover width (the closed cover is display:none once open)
+  function coverWidth(){ return Math.max(262, Math.min(360, window.innerWidth*0.42)); }
+
+  function measureSpreadW(){
+    if(getComputedStyle(reader).display!=='none') return bookInner.getBoundingClientRect().width;
+    reader.style.display='block'; reader.style.visibility='hidden';
+    var w=bookInner.getBoundingClientRect().width;
+    reader.style.display=''; reader.style.visibility='';
+    return w;
+  }
+  function coverArtClone(){ var f=document.querySelector('#albumCover .cover-front'); return f?f.cloneNode(true):document.createElement('div'); }
+  function endpaperClone(){ var b=document.querySelector('#albumCover .cover-back'); return b?b.cloneNode(true):document.createElement('div'); }
+
+  // build the 3D book at the cover's size; cover hinged at the spine, its back = the left page
+  function buildOverlay(twoUp,CW,idx){
+    var bookW=twoUp?CW*2:CW, bookH=CW*4/3;
+    obStage.innerHTML='';
+    var shift=document.createElement('div'); shift.className='ob-shift';
+    var scale=document.createElement('div'); scale.className='ob-scale';
+    var book=document.createElement('div'); book.className='ob-book';
+    book.style.width=bookW+'px'; book.style.height=bookH+'px';
+    var leftEl=null,coverEl;
+    if(twoUp){
+      leftEl=document.createElement('div'); leftEl.className='ob-pg ob-left'; leftEl.style.visibility='hidden'; leftEl.innerHTML=faceInner(pages[idx]);
+      var rightEl=document.createElement('div'); rightEl.className='ob-pg ob-right'; rightEl.innerHTML=faceInner(pages[idx+1]||pages[idx]);
+      var spine=document.createElement('div'); spine.className='ob-spine';
+      book.appendChild(leftEl); book.appendChild(rightEl); book.appendChild(spine);
+      coverEl=document.createElement('div'); coverEl.className='ob-cover'; coverEl.style.left='50%'; coverEl.style.width='50%'; coverEl.style.transformOrigin='left center'; coverEl.style.transform='rotateY(0deg)';
+      var front=document.createElement('div'); front.className='ob-cover-face ob-cover-front'; front.appendChild(coverArtClone());
+      var back=document.createElement('div'); back.className='ob-cover-face ob-cover-back'; back.innerHTML=faceInner(pages[idx]);
+      coverEl.appendChild(front); coverEl.appendChild(back); book.appendChild(coverEl);
+    } else {
+      var pg=document.createElement('div'); pg.className='ob-pg full'; pg.innerHTML=faceInner(pages[idx]);
+      book.appendChild(pg);
+      coverEl=document.createElement('div'); coverEl.className='ob-cover'; coverEl.style.left='0'; coverEl.style.width='100%'; coverEl.style.transformOrigin='left center'; coverEl.style.transform='rotateY(0deg)';
+      var f2=document.createElement('div'); f2.className='ob-cover-face ob-cover-front'; f2.appendChild(coverArtClone());
+      var b2=document.createElement('div'); b2.className='ob-cover-face ob-cover-back'; b2.appendChild(endpaperClone());
+      coverEl.appendChild(f2); coverEl.appendChild(b2); book.appendChild(coverEl);
+    }
+    scale.appendChild(book); shift.appendChild(scale); obStage.appendChild(shift);
+    return { shift:shift, scale:scale, coverEl:coverEl, leftEl:leftEl, bookW:bookW };
+  }
+
   function openBook(){
     if(phase!=='closed') return;
     Music.startOnOpen();
-    renderReader();                 // spread is solid underneath — revealed by motion, never faded in
-    if(reduce){ setPhase('open'); return; }
-    setPhase('opening');            // cover lifts open + spread unfolds from the spine
-    clearTimeout(animT1);
-    animT1=setTimeout(function(){ setPhase('open'); }, 1500);
+    if(reduce){ renderReader(); setPhase('open'); return; }
+    clearAnims();
+    renderReader();
+    var twoUp=perPage===2;
+    var CW=document.getElementById('albumCover').getBoundingClientRect().width||coverWidth();
+    lastCoverW=CW;
+    var targetW=measureSpreadW();
+    var ov=buildOverlay(twoUp,CW,0);
+    var ZF=targetW/ov.bookW, shiftX=twoUp?-(CW/2):0;
+    ov.shift.style.transform='translateX('+shiftX+'px)';
+    ov.scale.style.transform='scale(1)';
+    obStage.classList.add('show');
+    setPhase('opening');
+    // 1) cover swings fully open + book recenters — same size as the cover, no fade
+    void obStage.offsetWidth;   // commit the closed pose, then trigger the transition (reflow, not rAF)
+    ov.shift.style.transition='transform '+SWING+'ms cubic-bezier(.42,.04,.18,1)';
+    ov.coverEl.style.transition='transform '+SWING+'ms cubic-bezier(.42,.04,.18,1)';
+    ov.shift.style.transform='translateX(0px)';
+    ov.coverEl.style.transform='rotateY(-179deg)';
+    // left page (= cover's inside) is revealed once the cover is past vertical / about to land
+    if(ov.leftEl) later(function(){ ov.leftEl.style.visibility='visible'; }, SWING*0.6);
+    // 2) cover gone → spread slowly zooms up to its final size
+    later(function(){
+      ov.coverEl.style.display='none';
+      void ov.scale.offsetWidth;
+      ov.scale.style.transition='transform '+ZOOM+'ms cubic-bezier(.25,.7,.3,1)';
+      ov.scale.style.transform='scale('+ZF+')';
+    }, SWING+40);
+    // 3) hand off to the interactive reader (same size / position)
+    later(function(){ setPhase('open'); obStage.classList.remove('show'); obStage.innerHTML=''; }, SWING+40+ZOOM+60);
   }
+
   function closeBook(){
     if(phase!=='open') return;
-    if(reduce){ setPhase('closed'); start=0; perPage=window.innerWidth>=820?2:1; return; }
-    setPhase('closing');            // spread folds back to the spine + cover lowers shut
-    clearTimeout(animT1);
-    animT1=setTimeout(function(){ setPhase('closed'); start=0; perPage=window.innerWidth>=820?2:1; }, 1200);
+    if(reduce){ setPhase('closed'); start=0; perPage=window.innerWidth>=820?2:1; renderReader(); return; }
+    clearAnims();
+    var twoUp=perPage===2;
+    var CW=lastCoverW||coverWidth();
+    var targetW=measureSpreadW();
+    var idx=twoUp?(start-(start%2)):start;
+    var ov=buildOverlay(twoUp,CW,idx);
+    var ZF=targetW/ov.bookW, shiftX=twoUp?-(CW/2):0;
+    // start at the OPEN pose (full size, cover gone, both pages shown)
+    ov.shift.style.transform='translateX(0px)';
+    ov.scale.style.transform='scale('+ZF+')';
+    ov.coverEl.style.transform='rotateY(-179deg)';
+    ov.coverEl.style.display='none';
+    if(ov.leftEl) ov.leftEl.style.visibility='visible';
+    obStage.classList.add('show');
+    setPhase('closing');
+    // 1) spread shrinks back down to the cover's size (pull away)
+    void ov.scale.offsetWidth;
+    ov.scale.style.transition='transform '+ZOOM+'ms cubic-bezier(.4,0,.35,1)';
+    ov.scale.style.transform='scale(1)';
+    // 2) cover swings shut over it + book re-centers to the closed cover
+    later(function(){
+      if(ov.leftEl) ov.leftEl.style.visibility='hidden';
+      ov.coverEl.style.display='';
+      ov.coverEl.style.transition='none';
+      ov.coverEl.style.transform='rotateY(-179deg)';
+      ov.shift.style.transition='none';
+      ov.shift.style.transform='translateX(0px)';
+      void ov.coverEl.offsetWidth;   // commit, then run the shut swing
+      ov.coverEl.style.transition='transform '+SWING+'ms cubic-bezier(.5,.04,.3,1)';
+      ov.shift.style.transition='transform '+SWING+'ms cubic-bezier(.5,.04,.3,1)';
+      ov.coverEl.style.transform='rotateY(0deg)';
+      ov.shift.style.transform='translateX('+shiftX+'px)';
+    }, ZOOM+40);
+    // 3) back to the initial closed cover
+    later(function(){
+      setPhase('closed'); obStage.classList.remove('show'); obStage.innerHTML='';
+      start=0; perPage=window.innerWidth>=820?2:1; renderReader();
+    }, ZOOM+40+SWING+60);
   }
 
   document.getElementById('openBtn').addEventListener('click',openBook);
@@ -633,6 +766,13 @@
 
   /* idphoto lightbox */
   (function(){ var idp=P('idphoto'); document.getElementById('idphoto').addEventListener('click',function(){ openLightbox([idp],0); }); })();
+
+  /* music player: tap the ball to expand / collapse */
+  (function(){
+    var player=document.getElementById('player');
+    document.getElementById('playerBall').addEventListener('click',function(e){ e.stopPropagation(); player.classList.toggle('expanded'); });
+    document.addEventListener('click',function(e){ if(player.classList.contains('expanded')&&!player.contains(e.target)) player.classList.remove('expanded'); });
+  })();
 
 })();
 </script>
